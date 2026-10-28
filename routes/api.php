@@ -87,7 +87,7 @@ Route::prefix('admin')->middleware('admin.header')->group(function (): void {
     Route::post('/auth/login', [StaffAuthController::class, 'login'])->middleware('throttle:10,1,admin-login');
     Route::post('/auth/totp', [StaffAuthController::class, 'confirmTotp'])->middleware('throttle:10,1,admin-totp');
 
-    Route::middleware(['auth:sanctum', 'admin', 'throttle:30,1,admin'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'admin', 'throttle:admin'])->group(function (): void {
         Route::get('/me', [StaffAuthController::class, 'me']);
         Route::post('/auth/logout', [StaffAuthController::class, 'logout']);
         Route::get('/dashboard', [DashboardController::class, 'show']);
