@@ -42,7 +42,7 @@ class ConfirmStaffTotpAction
                 'totp_last_step' => $step,
             ])->save();
 
-            $token = $staff->createToken('admin', ['moderation'], now()->addMinutes(15));
+            $token = $staff->createToken('admin', ['moderation'], now()->addHour());
 
             AdminAuditLog::query()->create([
                 'staff_id' => $staff->id,

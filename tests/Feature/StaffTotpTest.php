@@ -3,6 +3,7 @@
 use App\Domain\Moderation\Services\Totp;
 use App\Models\Staff;
 use Illuminate\Support\Carbon;
+use Laravel\Sanctum\PersonalAccessToken;
 
 it('asks for a second factor and rejects the same code twice', function () {
     Carbon::setTestNow(Carbon::parse('2026-10-15 15:00:15'));
@@ -47,6 +48,8 @@ it('asks for a second factor and rejects the same code twice', function () {
     ])->getJson('/api/admin/me')
         ->assertOk()
         ->assertJsonPath('data.name', 'Mesa de moderación');
+
+    expect(PersonalAccessToken::findToken($token)?->expires_at?->equalTo(Carbon::parse('2026-10-15 16:00:15')))->toBeTrue();
 
     $again = $this->withHeaders(adminHeaders())
         ->postJson('/api/admin/auth/login', [
