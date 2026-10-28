@@ -3,7 +3,7 @@
 ## Contexto del Proyecto
 
 API backend para plataforma de deliberación ciudadana.
-Stack: Laravel 12, PHP 8.3+, PostgreSQL, Redis, Sanctum, Horizon.
+Stack: Laravel 12, PHP 8.3+, MySQL, Redis, Sanctum, Horizon.
 
 ## Estructura de Directorios
 
