@@ -1,0 +1,18 @@
+---
+description: Tests Pest del backend
+globs: tests/**/*.php
+alwaysApply: false
+---
+
+# Tests del backend
+
+- Pest. Feature test por endpoint. Unit test por Action y Service.
+- Cobertura mínima 80% en `app/Domain/`.
+- El caso feliz y el de validación van juntos.
+
+```php
+it('rejects a topic without title', function () {
+    $this->postJson('/api/v1/topics', ['body' => 'sin título'])
+        ->assertUnprocessable();
+});
+```

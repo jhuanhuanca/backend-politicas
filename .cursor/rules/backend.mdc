@@ -1,0 +1,19 @@
+---
+description: Reglas del backend Laravel
+globs: app/**/*.php,routes/**/*.php,database/**/*.php
+alwaysApply: false
+---
+
+# Backend Laravel
+
+- FormRequest para validar. Service o Action para la lógica. API Resource para la respuesta.
+- Eager loading con `with()`. Transacción si hay más de una tabla.
+- Índice en columnas de `WHERE` y `ORDER BY`.
+- Respuesta `{ data, meta, errors }`. Feeds con paginación por cursor.
+- No modifiques una migración ya aplicada en producción: crea otra.
+
+```php
+return DB::transaction(function () use ($data) {
+    return Topic::query()->create($data);
+});
+```

@@ -1,0 +1,1562 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Política API",
+    "version": "1.0.0",
+    "description": "API pública de deliberación. Las respuestas de negocio usan el sobre data, meta y errors. Este documento se entrega tal cual en GET /openapi.json."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "tags": [
+    { "name": "Sesión" },
+    { "name": "Debates" },
+    { "name": "Noticias" },
+    { "name": "Votaciones" },
+    { "name": "Búsqueda" },
+    { "name": "Cuenta" },
+    { "name": "Moderación" }
+  ],
+  "paths": {
+    "/openapi.json": {
+      "get": {
+        "tags": ["Sesión"],
+        "summary": "Documento OpenAPI",
+        "operationId": "showOpenApi",
+        "responses": {
+          "200": {
+            "description": "Este documento.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ping": {
+      "get": {
+        "tags": ["Sesión"],
+        "summary": "Comprueba que la API responde",
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "description": "La API está disponible.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PingEnvelope" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Sesión"],
+        "summary": "Crea una cuenta con nick y dispositivo",
+        "operationId": "register",
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterBody" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cuenta creada.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionEnvelope" }
+              }
+            }
+          },
+          "409": { "$ref": "#/components/responses/DeviceTaken" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Sesión"],
+        "summary": "Entra con el nick de este dispositivo",
+        "operationId": "login",
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión abierta.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Sesión"],
+        "summary": "Cierra la sesión y revoca el token",
+        "operationId": "logout",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Empty" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates": {
+      "get": {
+        "tags": ["Debates"],
+        "summary": "Lista los debates",
+        "operationId": "listDebates",
+        "parameters": [
+          { "$ref": "#/components/parameters/OptionalDeviceFingerprint" },
+          { "$ref": "#/components/parameters/OptionalBearer" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Debates recientes. liked solo aparece con el token y el dispositivo de la cuenta.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DebateListEnvelope" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      },
+      "post": {
+        "tags": ["Debates"],
+        "summary": "Publica un debate",
+        "operationId": "createDebate",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DebateBody" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Debate publicado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DebateEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates/newer": {
+      "get": {
+        "tags": ["Debates"],
+        "summary": "Debates publicados después de un cursor",
+        "operationId": "listNewerDebates",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0 }
+          },
+          { "$ref": "#/components/parameters/OptionalDeviceFingerprint" },
+          { "$ref": "#/components/parameters/OptionalBearer" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hasta 20 debates nuevos, sin el hilo de comentarios.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DebateLiveEnvelope" }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates/{topic}": {
+      "get": {
+        "tags": ["Debates"],
+        "summary": "Muestra un debate y sus argumentos",
+        "operationId": "showDebate",
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          { "$ref": "#/components/parameters/OptionalDeviceFingerprint" },
+          { "$ref": "#/components/parameters/OptionalBearer" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Debate con argumentos.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DebateEnvelope" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates/{topic}/updates": {
+      "get": {
+        "tags": ["Debates"],
+        "summary": "Comentarios y respuestas publicados después de un cursor",
+        "operationId": "listNewerArguments",
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0 }
+          },
+          { "$ref": "#/components/parameters/OptionalDeviceFingerprint" },
+          { "$ref": "#/components/parameters/OptionalBearer" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hasta 30 mensajes nuevos de ese debate.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ArgumentLiveEnvelope" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates/{topic}/arguments": {
+      "post": {
+        "tags": ["Debates"],
+        "summary": "Comenta un debate o responde un comentario de primer nivel",
+        "operationId": "createArgument",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ArgumentBody" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comentario publicado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ArgumentEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates/{topic}/reactions": {
+      "post": {
+        "tags": ["Debates"],
+        "summary": "Activa o quita el me gusta de un debate",
+        "operationId": "reactToDebate",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contador actualizado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReactionEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/debates/{topic}/shares": {
+      "post": {
+        "tags": ["Debates"],
+        "summary": "Registra que el debate se compartió",
+        "operationId": "shareDebate",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contador de compartidos.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ShareEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/arguments/newer": {
+      "get": {
+        "tags": ["Debates"],
+        "summary": "Comentarios nuevos de cualquier debate",
+        "operationId": "listLiveArguments",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0 }
+          },
+          { "$ref": "#/components/parameters/OptionalDeviceFingerprint" },
+          { "$ref": "#/components/parameters/OptionalBearer" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hasta 30 comentarios nuevos, con el debate al que pertenecen.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ArgumentLiveEnvelope" }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/arguments/{argument}/reactions": {
+      "post": {
+        "tags": ["Debates"],
+        "summary": "Activa o quita el me gusta de un argumento",
+        "operationId": "reactToArgument",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ArgumentId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contador actualizado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReactionEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/arguments/{argument}/votes": {
+      "post": {
+        "tags": ["Debates"],
+        "summary": "Vota un argumento a favor o en contra",
+        "operationId": "voteArgument",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ArgumentId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ArgumentVoteBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Voto registrado o retirado si se repite la misma postura.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ArgumentVoteEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/news": {
+      "get": {
+        "tags": ["Noticias"],
+        "summary": "Lista las noticias",
+        "operationId": "listNews",
+        "responses": {
+          "200": {
+            "description": "Noticias publicadas.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NewsListEnvelope" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/news/{newsItem}": {
+      "get": {
+        "tags": ["Noticias"],
+        "summary": "Muestra una noticia",
+        "operationId": "showNews",
+        "parameters": [
+          { "$ref": "#/components/parameters/NewsId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Noticia.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NewsEnvelope" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/polls": {
+      "get": {
+        "tags": ["Votaciones"],
+        "summary": "Lista las votaciones",
+        "operationId": "listPolls",
+        "parameters": [
+          { "$ref": "#/components/parameters/OptionalDeviceFingerprint" },
+          { "$ref": "#/components/parameters/OptionalBearer" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Votaciones. voted_option_id solo aparece con el token y el dispositivo de la cuenta.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PollListEnvelope" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/polls/{poll}/votes": {
+      "post": {
+        "tags": ["Votaciones"],
+        "summary": "Registra un voto. Cada cuenta vota una vez.",
+        "operationId": "votePoll",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/PollId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PollVoteBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Voto registrado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PollEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": ["Cuenta"],
+        "summary": "Totales públicos, sin datos de personas",
+        "operationId": "publicMetrics",
+        "responses": {
+          "200": {
+            "description": "Conteos agregados.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MetricsEnvelope" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": ["Búsqueda"],
+        "summary": "Busca debates, noticias y votaciones",
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "minLength": 2, "maxLength": 80 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultados. Los comodines % y _ no amplían la búsqueda.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchEnvelope" }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/reports": {
+      "post": {
+        "tags": ["Moderación"],
+        "summary": "Reporta un debate, un argumento o una noticia",
+        "operationId": "createReport",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReportBody" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reporte recibido. No incluye a la persona que reporta.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReportEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/me": {
+      "delete": {
+        "tags": ["Cuenta"],
+        "summary": "Borra la cuenta autenticada",
+        "operationId": "deleteAccount",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeleteAccountBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cuenta borrada.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeletedEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/conversations": {
+      "get": {
+        "tags": ["Conversaciones"],
+        "summary": "Lista las conversaciones de la cuenta",
+        "operationId": "listConversations",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversaciones con el nick de la otra persona.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConversationListEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      },
+      "post": {
+        "tags": ["Conversaciones"],
+        "summary": "Abre o recupera la conversación con un nick",
+        "operationId": "openConversation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ConversationNick" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conversación lista.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConversationEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/conversations/{conversation}/messages": {
+      "get": {
+        "tags": ["Conversaciones"],
+        "summary": "Mensajes nuevos de una conversación",
+        "operationId": "listMessages",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ConversationId" },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0 }
+          },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hasta 30 mensajes posteriores al cursor.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageLiveEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      },
+      "post": {
+        "tags": ["Conversaciones"],
+        "summary": "Envía un mensaje en la conversación",
+        "operationId": "sendMessage",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ConversationId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MessageBody" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mensaje enviado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/me/standing": {
+      "get": {
+        "tags": ["Cuenta"],
+        "summary": "Indica si la cuenta autenticada está silenciada",
+        "operationId": "showStanding",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de participación de la cuenta.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StandingEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/me/notices": {
+      "get": {
+        "tags": ["Cuenta"],
+        "summary": "Avisos de la cuenta autenticada",
+        "operationId": "listNotices",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Últimos avisos.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticeListEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/me/notices/{notice}/read": {
+      "post": {
+        "tags": ["Cuenta"],
+        "summary": "Marca un aviso propio como leído",
+        "operationId": "readNotice",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/NoticeId" },
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aviso leído.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticeReadEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/Missing" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/me/participation": {
+      "get": {
+        "tags": ["Cuenta"],
+        "summary": "Participación de la cuenta. Exige consentimiento de métricas.",
+        "operationId": "showParticipation",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sin consentimiento solo indica consent false.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ParticipationEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    },
+    "/me/participation/consent": {
+      "post": {
+        "tags": ["Cuenta"],
+        "summary": "Activa o apaga el perfil de métricas",
+        "operationId": "updateMetricsConsent",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/DeviceFingerprint" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ConsentBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consentimiento actualizado.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ParticipationEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/TooMany" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "parameters": {
+      "DeviceFingerprint": {
+        "name": "X-Device-Fingerprint",
+        "in": "header",
+        "required": true,
+        "schema": { "type": "string", "minLength": 8, "maxLength": 128 }
+      },
+      "OptionalDeviceFingerprint": {
+        "name": "X-Device-Fingerprint",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string", "minLength": 8, "maxLength": 128 }
+      },
+      "OptionalBearer": {
+        "name": "Authorization",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string" },
+        "description": "Bearer token. Las marcas personales solo se devuelven si el dispositivo coincide."
+      },
+      "TopicId": {
+        "name": "topic",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      },
+      "ConversationId": {
+        "name": "conversation",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      },
+      "ArgumentId": {
+        "name": "argument",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      },
+      "NewsId": {
+        "name": "newsItem",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      },
+      "PollId": {
+        "name": "poll",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      },
+      "NoticeId": {
+        "name": "notice",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      }
+    },
+    "responses": {
+      "Empty": {
+        "description": "Operación hecha.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/EmptyEnvelope" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Falta la sesión, el nick no coincide con el dispositivo o el dispositivo cambió.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorEnvelope" }
+          }
+        }
+      },
+      "Validation": {
+        "description": "Los datos no pasan la validación.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorEnvelope" }
+          }
+        }
+      },
+      "DeviceTaken": {
+        "description": "Este dispositivo ya tiene una cuenta.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorEnvelope" }
+          }
+        }
+      },
+      "Missing": {
+        "description": "No existe o no pertenece a la cuenta.",
+        "content": {
+          "application/json": {
+            "schema": { "type": "object" }
+          }
+        }
+      },
+      "TooMany": {
+        "description": "Se superó el cupo de la ruta.",
+        "content": {
+          "application/json": {
+            "schema": { "type": "object" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Author": {
+        "type": "object",
+        "required": ["nick"],
+        "properties": {
+          "nick": { "type": "string", "nullable": true }
+        }
+      },
+      "Argument": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "topic_id": { "type": "integer" },
+          "parent_id": { "type": "integer", "nullable": true },
+          "body": { "type": "string" },
+          "likes": { "type": "integer" },
+          "liked": { "type": "boolean" },
+          "favor": { "type": "integer" },
+          "contra": { "type": "integer" },
+          "stance": { "type": "string", "nullable": true, "enum": ["favor", "contra", null] },
+          "created_at": { "type": "string", "nullable": true },
+          "author": { "$ref": "#/components/schemas/Author" },
+          "replies": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Argument" }
+          }
+        }
+      },
+      "Debate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "body": { "type": "string" },
+          "image": { "type": "string", "nullable": true },
+          "kind": { "type": "string" },
+          "context": { "type": "string", "nullable": true },
+          "likes": { "type": "integer" },
+          "shares": { "type": "integer" },
+          "liked": { "type": "boolean" },
+          "closed": { "type": "boolean" },
+          "featured": { "type": "boolean" },
+          "created_at": { "type": "string", "nullable": true },
+          "author": { "$ref": "#/components/schemas/Author" },
+          "arguments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Argument" }
+          }
+        }
+      },
+      "NewsItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "summary": { "type": "string", "nullable": true },
+          "source": { "type": "string" },
+          "published_at": { "type": "string", "nullable": true },
+          "debate_id": { "type": "integer", "nullable": true }
+        }
+      },
+      "PollOption": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "label": { "type": "string" },
+          "votes": { "type": "integer" }
+        }
+      },
+      "Poll": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "image": { "type": "string", "nullable": true },
+          "badge": { "type": "string", "nullable": true },
+          "place": { "type": "string", "nullable": true },
+          "category": { "type": "string" },
+          "voted_option_id": { "type": "integer", "nullable": true },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PollOption" }
+          }
+        }
+      },
+      "RegisterBody": {
+        "type": "object",
+        "required": ["nick", "consent_terms"],
+        "properties": {
+          "nick": { "type": "string", "minLength": 3, "maxLength": 20 },
+          "consent_terms": { "type": "boolean" },
+          "consent_metrics": { "type": "boolean" }
+        }
+      },
+      "LoginBody": {
+        "type": "object",
+        "required": ["nick"],
+        "properties": {
+          "nick": { "type": "string", "minLength": 3, "maxLength": 20 }
+        }
+      },
+      "DebateBody": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": { "type": "string", "minLength": 8, "maxLength": 5000 }
+        }
+      },
+      "ArgumentBody": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": { "type": "string", "minLength": 2, "maxLength": 2000 },
+          "parent_id": { "type": "integer", "nullable": true }
+        }
+      },
+      "ArgumentVoteBody": {
+        "type": "object",
+        "required": ["stance"],
+        "properties": {
+          "stance": { "type": "string", "enum": ["favor", "contra"] }
+        }
+      },
+      "PollVoteBody": {
+        "type": "object",
+        "required": ["option_id"],
+        "properties": {
+          "option_id": { "type": "integer" }
+        }
+      },
+      "ReportBody": {
+        "type": "object",
+        "required": ["target_type", "target_id", "reason"],
+        "properties": {
+          "target_type": { "type": "string", "enum": ["debate", "argument", "news"] },
+          "target_id": { "type": "integer" },
+          "reason": { "type": "string", "enum": ["insulto", "dato_falso", "fuera_de_tema", "spam", "datos_personales"] },
+          "body": { "type": "string", "maxLength": 500, "nullable": true }
+        }
+      },
+      "DeleteAccountBody": {
+        "type": "object",
+        "required": ["nick"],
+        "properties": {
+          "nick": { "type": "string", "maxLength": 20 }
+        }
+      },
+      "ConsentBody": {
+        "type": "object",
+        "required": ["consent_metrics"],
+        "properties": {
+          "consent_metrics": { "type": "boolean" }
+        }
+      },
+      "EmptyEnvelope": {
+        "type": "object",
+        "required": ["data", "meta", "errors"],
+        "properties": {
+          "data": { "type": "object" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": ["data", "meta", "errors"],
+        "properties": {
+          "data": { "type": "object" },
+          "meta": { "type": "object" },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      },
+      "PingEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": { "status": { "type": "string" } }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "SessionEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "nick": { "type": "string" }
+                }
+              },
+              "token": { "type": "string" }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "DebateEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Debate" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "DebateLiveEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Debate" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "latest": { "type": "integer" },
+              "more": { "type": "boolean" }
+            }
+          },
+          "errors": { "type": "object" }
+        }
+      },
+      "ArgumentLiveEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Argument" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "latest": { "type": "integer" },
+              "more": { "type": "boolean" }
+            }
+          },
+          "errors": { "type": "object" }
+        }
+      },
+      "DebateListEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Debate" }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ArgumentEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Argument" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ReactionEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "likes": { "type": "integer" },
+              "liked": { "type": "boolean" }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ShareEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": { "shares": { "type": "integer" } }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ArgumentVoteEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "favor": { "type": "integer" },
+              "contra": { "type": "integer" },
+              "stance": { "type": "string", "nullable": true }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "NewsEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": { "$ref": "#/components/schemas/NewsItem" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "NewsListEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NewsItem" }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "PollEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Poll" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "PollListEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Poll" }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "MetricsEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "debates": { "type": "integer" },
+              "arguments": { "type": "integer" },
+              "votes": { "type": "integer" },
+              "news": { "type": "integer" },
+              "voices": { "type": "integer" }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "SearchEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "debates": { "type": "array", "items": { "type": "object" } },
+              "news": { "type": "array", "items": { "type": "object" } },
+              "polls": { "type": "array", "items": { "type": "object" } }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ReportEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "status": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "DeletedEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": { "deleted": { "type": "boolean" } }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ConversationNick": {
+        "type": "object",
+        "required": ["nick"],
+        "properties": {
+          "nick": { "type": "string", "minLength": 3, "maxLength": 20 }
+        }
+      },
+      "MessageBody": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        }
+      },
+      "ConversationEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Conversation" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ConversationListEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Conversation" }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "Conversation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "nick": { "type": "string", "nullable": true },
+          "last_body": { "type": "string", "nullable": true },
+          "last_at": { "type": "string", "nullable": true }
+        }
+      },
+      "MessageEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DirectMessage" },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "MessageLiveEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DirectMessage" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "latest": { "type": "integer" },
+              "more": { "type": "boolean" }
+            }
+          },
+          "errors": { "type": "object" }
+        }
+      },
+      "DirectMessage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "body": { "type": "string" },
+          "mine": { "type": "boolean" },
+          "created_at": { "type": "string", "nullable": true }
+        }
+      },
+      "StandingEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "silenced": { "type": "boolean" },
+              "until": { "type": "string", "nullable": true }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      },
+      "NoticeListEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer" },
+                "kind": { "type": "string" },
+                "author_nick": { "type": "string" },
+                "debate_id": { "type": "integer" },
+                "read": { "type": "boolean" },
+                "created_at": { "type": "string", "nullable": true }
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": { "unread": { "type": "integer" } }
+          },
+          "errors": { "type": "object" }
+        }
+      },
+      "NoticeReadEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "read": { "type": "boolean" }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": { "unread": { "type": "integer" } }
+          },
+          "errors": { "type": "object" }
+        }
+      },
+      "ParticipationEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "consent": { "type": "boolean" },
+              "debates": { "type": "integer" },
+              "arguments": { "type": "integer" },
+              "votes": { "type": "integer" },
+              "argument_votes": { "type": "integer" },
+              "reactions": { "type": "integer" },
+              "participation": { "type": "integer" },
+              "quality": { "type": "integer" },
+              "respect": { "type": "integer" },
+              "influence": { "type": "integer" },
+              "candidate": { "type": "boolean" }
+            }
+          },
+          "meta": { "type": "object" },
+          "errors": { "type": "object" }
+        }
+      }
+    }
+  }
+}

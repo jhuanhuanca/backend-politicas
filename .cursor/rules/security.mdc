@@ -1,0 +1,12 @@
+---
+description: Seguridad del backend
+alwaysApply: true
+---
+
+# Seguridad
+
+- No commitear secrets. Validar todo input con FormRequest.
+- No interpolar input en `DB::raw()` ni en SQL.
+- Rate limiting en auth. Endpoints públicos sin datos de usuario.
+- Auditoría append-only para acciones admin.
+- Consentimiento explícito para métricas y vía para borrar la cuenta.

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Mesa de movilidad</title>
+    <description>Notas de la mesa para leer antes de votar.</description>
+    <item>
+      <title>El último bus de la noche sigue sin horario publicado.</title>
+      <description>La mesa pide que el horario real quede escrito antes de votar el turno noche.</description>
+      <link>http://127.0.0.1:8000/feeds/mesa-ciudad.xml#bus-noche</link>
+      <guid>mesa-ciudad-bus-noche</guid>
+      <pubDate>Wed, 14 Oct 2026 14:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Quien sale después de las 21:00 no tiene cómo volver.</title>
+      <description>Un horario único del mercado mueve el último bus y deja fuera el turno que cierra tarde.</description>
+      <link>http://127.0.0.1:8000/feeds/mesa-ciudad.xml#turno-tarde</link>
+      <guid>mesa-ciudad-turno-tarde</guid>
+      <pubDate>Wed, 14 Oct 2026 13:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
