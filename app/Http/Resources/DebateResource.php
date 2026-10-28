@@ -30,6 +30,7 @@ class DebateResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'author' => [
                 'nick' => $this->user?->nick,
+                'avatar' => $this->user?->avatar,
             ],
             'arguments' => $this->relationLoaded('arguments')
                 ? ArgumentResource::collection($this->arguments)->resolve()

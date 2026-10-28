@@ -24,6 +24,7 @@ use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 
 class DebateController extends Controller
 {
@@ -89,7 +90,15 @@ class DebateController extends Controller
 
     public function store(StoreDebateRequest $request, CreateDebateAction $action): JsonResponse
     {
-        $topic = $action->execute($this->author($request), $request->string('body')->toString());
+        $upload = $request->file('media');
+
+        $topic = $action->execute(
+            $this->author($request),
+            $request->string('body')->toString(),
+            $request->filled('image') ? $request->string('image')->toString() : null,
+            $upload instanceof UploadedFile ? $upload : null,
+            $request->string('kind')->toString(),
+        );
 
         return $this->envelope((new DebateResource($topic))->resolve(), 201);
     }

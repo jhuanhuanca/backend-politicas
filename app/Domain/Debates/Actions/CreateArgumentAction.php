@@ -32,7 +32,7 @@ class CreateArgumentAction
             $this->notify($author, $topic, $parent);
 
             return $argument->load([
-                'user:id,nick',
+                'user:id,nick,avatar',
                 'reactions',
                 'votes',
                 'replies',

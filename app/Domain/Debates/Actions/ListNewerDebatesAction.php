@@ -15,7 +15,7 @@ class ListNewerDebatesAction
     public function execute(int $after): array
     {
         $rows = Topic::query()
-            ->with('user:id,nick')
+            ->with('user:id,nick,avatar')
             ->where('id', '>', $after)
             ->orderBy('id')
             ->limit(self::LIMIT + 1)

@@ -29,6 +29,7 @@ class ArgumentResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'author' => [
                 'nick' => $this->user?->nick,
+                'avatar' => $this->user?->avatar,
             ],
             'replies' => $this->relationLoaded('replies')
                 ? ArgumentResource::collection($this->replies)->resolve()

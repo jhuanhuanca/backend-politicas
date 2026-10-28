@@ -10,6 +10,7 @@ use App\Models\Reaction;
 use App\Models\Report;
 use App\Models\Topic;
 use App\Models\User;
+use App\Support\PublicMedia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -23,6 +24,9 @@ class DeleteAccountAction
             ]);
         }
 
+        $avatar = $user->avatar;
+        $cover = $user->cover;
+
         DB::transaction(function () use ($user): void {
             $this->releasePollVotes($user);
             $this->releaseReactions($user);
@@ -31,6 +35,10 @@ class DeleteAccountAction
             $user->tokens()->delete();
             $user->delete();
         });
+
+        $media = app(PublicMedia::class);
+        $media->delete(is_string($avatar) ? $avatar : null);
+        $media->delete(is_string($cover) ? $cover : null);
     }
 
     private function releasePollVotes(User $user): void

@@ -73,6 +73,8 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/polls/{poll}/votes', [PollController::class, 'vote']);
         });
         Route::get('/me/standing', [AccountController::class, 'standing']);
+        Route::post('/me/avatar', [AccountController::class, 'avatar']);
+        Route::post('/me/cover', [AccountController::class, 'cover']);
         Route::delete('/me', [AccountController::class, 'destroy']);
         Route::get('/me/notices', [ActivityNoticeController::class, 'index']);
         Route::post('/me/notices/{notice}/read', [ActivityNoticeController::class, 'read']);
@@ -96,6 +98,7 @@ Route::prefix('admin')->middleware('admin.header')->group(function (): void {
         Route::get('/leaders', [LeaderController::class, 'index']);
         Route::post('/leaders/{leaderCandidate}/decision', [LeaderController::class, 'decide']);
         Route::get('/debates', [DebateModerationController::class, 'index']);
+        Route::post('/debates', [DebateModerationController::class, 'store']);
         Route::post('/debates/{topic}/state', [DebateModerationController::class, 'update']);
         Route::get('/reports', [ReportQueueController::class, 'index']);
         Route::get('/reports/newer', [ReportQueueController::class, 'newer']);

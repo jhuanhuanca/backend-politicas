@@ -21,7 +21,7 @@ class ListNewerArgumentsAction
             ->where('topic_id', $topic->id)
             ->where('id', '>', $after)
             ->with([
-                'user:id,nick',
+                'user:id,nick,avatar',
                 'reactions' => fn (Relation $query) => $this->onlyViewer($query, $viewer),
                 'votes' => fn (Relation $query) => $this->onlyViewer($query, $viewer),
             ])
@@ -47,7 +47,7 @@ class ListNewerArgumentsAction
         $rows = Argument::query()
             ->where('id', '>', $after)
             ->with([
-                'user:id,nick',
+                'user:id,nick,avatar',
                 'reactions' => fn (Relation $query) => $this->onlyViewer($query, $viewer),
                 'votes' => fn (Relation $query) => $this->onlyViewer($query, $viewer),
             ])

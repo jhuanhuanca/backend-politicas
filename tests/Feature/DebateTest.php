@@ -2,6 +2,7 @@
 
 use App\Models\Topic;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 
 function registerDebateUser(string $nick): User
 {
@@ -237,4 +238,55 @@ it('rejects a debate from another device', function () {
         ], deviceHeaders('otro-dispositivo'))
         ->assertUnauthorized()
         ->assertJsonPath('errors.device.0', 'Este dispositivo no coincide con la cuenta.');
+});
+
+it('publishes a photo from the device and a video from an https link', function () {
+    $user = registerDebateUser('foto_debate');
+
+    $uploaded = $this->actingAs($user, 'sanctum')
+        ->withHeaders(deviceHeaders())
+        ->post('/api/v1/debates', [
+            'body' => 'La foto del mercado a la hora de cierre.',
+            'kind' => 'image',
+            'media' => UploadedFile::fake()->image('mercado.jpg'),
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.kind', 'image');
+
+    $image = (string) $uploaded->json('data.image');
+    expect($image)->toStartWith('/media/debates/')
+        ->and($image)->toEndWith('.jpg')
+        ->and(is_file(public_path(ltrim($image, '/'))))->toBeTrue();
+    unlink(public_path(ltrim($image, '/')));
+
+    $this->actingAs($user, 'sanctum')
+        ->withHeaders(deviceHeaders())
+        ->postJson('/api/v1/debates', [
+            'body' => 'El video de la audiencia queda enlazado.',
+            'kind' => 'video',
+            'image' => 'https://example.com/audiencia.mp4',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.kind', 'video')
+        ->assertJsonPath('data.image', 'https://example.com/audiencia.mp4');
+
+    $this->actingAs($user, 'sanctum')
+        ->withHeaders(deviceHeaders())
+        ->post('/api/v1/debates', [
+            'body' => 'Un archivo que no es una imagen.',
+            'kind' => 'image',
+            'media' => UploadedFile::fake()->create('nota.txt', 10, 'text/plain'),
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.media.0', 'La imagen tiene que ser JPG, PNG, WEBP o GIF.');
+
+    $this->actingAs($user, 'sanctum')
+        ->withHeaders(deviceHeaders())
+        ->postJson('/api/v1/debates', [
+            'body' => 'Un enlace sin cifrado no se guarda.',
+            'kind' => 'image',
+            'image' => 'http://example.com/foto.jpg',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.image.0', 'El enlace tiene que empezar por https://.');
 });

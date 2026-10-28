@@ -82,3 +82,48 @@ it('features an older debate and freezes a closed one', function () {
         'subject_id' => $newer->id,
     ]);
 });
+
+it('publishes a debate from the staff desk onto the public list', function () {
+    Staff::factory()->create([
+        'email' => 'redaccion@localhost',
+        'password' => 'clave-segura',
+    ]);
+    $token = staffSessionToken('redaccion@localhost', 'clave-segura');
+    $headers = [
+        ...adminHeaders(),
+        'Authorization' => 'Bearer '.$token,
+    ];
+
+    $created = $this->withHeaders($headers)
+        ->postJson('/api/admin/debates', [
+            'body' => 'El horario del bus nocturno se discute antes de la votación.',
+            'context' => 'Mesa de movilidad',
+            'image' => 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=1200&q=70',
+            'kind' => 'image',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.author_nick', 'mesa')
+        ->assertJsonMissingPath('data.user_id');
+
+    expect($created->getContent())->not->toContain('device_fingerprint');
+
+    $this->getJson('/api/v1/debates')
+        ->assertOk()
+        ->assertJsonPath('data.0.body', 'El horario del bus nocturno se discute antes de la votación.')
+        ->assertJsonPath('data.0.context', 'Mesa de movilidad')
+        ->assertJsonPath('data.0.author.nick', 'mesa')
+        ->assertJsonPath('data.0.kind', 'image');
+
+    $this->assertDatabaseHas('admin_audit_logs', [
+        'action' => 'debate.published',
+        'subject_id' => $created->json('data.id'),
+    ]);
+
+    $this->withHeaders($headers)
+        ->postJson('/api/admin/debates', [
+            'body' => 'corto',
+            'context' => 'Mesa',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.body.0', 'El debate necesita al menos 8 caracteres.');
+});
