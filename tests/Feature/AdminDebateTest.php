@@ -98,6 +98,7 @@ it('publishes a debate from the staff desk onto the public list', function () {
         ->postJson('/api/admin/debates', [
             'body' => 'El horario del bus nocturno se discute antes de la votación.',
             'context' => 'Mesa de movilidad',
+            'category' => 'territorio',
             'image' => 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=1200&q=70',
             'kind' => 'image',
         ])
@@ -111,6 +112,7 @@ it('publishes a debate from the staff desk onto the public list', function () {
         ->assertOk()
         ->assertJsonPath('data.0.body', 'El horario del bus nocturno se discute antes de la votación.')
         ->assertJsonPath('data.0.context', 'Mesa de movilidad')
+        ->assertJsonPath('data.0.category', 'territorio')
         ->assertJsonPath('data.0.author.nick', 'mesa')
         ->assertJsonPath('data.0.kind', 'image');
 

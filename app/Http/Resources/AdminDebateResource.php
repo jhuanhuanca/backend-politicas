@@ -21,6 +21,7 @@ class AdminDebateResource extends JsonResource
             'id' => $this->id,
             'excerpt' => Str::limit((string) $this->body, 160),
             'author_nick' => $this->user?->nick,
+            'category' => $this->category,
             'closed' => $this->closed_at !== null,
             'featured' => $this->featured_at !== null,
             'created_at' => $this->created_at?->toIso8601String(),

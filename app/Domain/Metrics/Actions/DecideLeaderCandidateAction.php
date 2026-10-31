@@ -46,7 +46,7 @@ class DecideLeaderCandidateAction
                 'created_at' => now(),
             ]);
 
-            return $candidate->refresh()->load('user:id,nick');
+            return $candidate->refresh()->load('user:id,nick,name,department,municipality');
         });
     }
 }

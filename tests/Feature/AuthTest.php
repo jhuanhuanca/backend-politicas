@@ -16,11 +16,17 @@ it('registers a nick for a device', function () {
 
     $response->assertCreated()
         ->assertJsonPath('data.user.nick', 'ana')
-        ->assertJsonMissingPath('data.user.device_fingerprint');
+        ->assertJsonMissingPath('data.user.device_fingerprint')
+        ->assertJsonMissingPath('data.user.municipality')
+        ->assertJsonMissingPath('data.user.department');
 
     expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
 
-    $this->assertDatabaseHas('users', ['nick' => 'ana']);
+    $this->assertDatabaseHas('users', [
+        'nick' => 'ana',
+        'department' => 'La Paz',
+        'municipality' => 'El Alto',
+    ]);
     $this->assertDatabaseHas('consents', [
         'type' => 'terms',
     ]);
@@ -34,6 +40,18 @@ it('registers a nick for a device', function () {
 
     expect($response->json('data.user'))->not->toHaveKey('email')
         ->and($response->getContent())->not->toContain('ana@example.com');
+});
+
+it('rejects a municipality from another department', function () {
+    $this->withHeaders(deviceHeaders())
+        ->postJson('/api/v1/auth/register', account([
+            'nick' => 'ana',
+            'department' => 'La Paz',
+            'municipality' => 'Sucre',
+            'consent_terms' => true,
+        ]))
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.municipality.0', 'Elige un municipio de ese departamento.');
 });
 
 it('rejects an account for someone under 18', function () {

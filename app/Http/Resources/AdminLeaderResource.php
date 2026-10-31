@@ -19,6 +19,9 @@ class AdminLeaderResource extends JsonResource
         return [
             'id' => $this->id,
             'nick' => $this->user?->nick,
+            'name' => $this->user?->name,
+            'department' => $this->user?->department,
+            'municipality' => $this->user?->municipality,
             'participation' => $this->participation,
             'respect' => $this->respect,
             'status' => $this->status,

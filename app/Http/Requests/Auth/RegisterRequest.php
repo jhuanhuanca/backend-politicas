@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Domain\Identity\Departments;
+use App\Domain\Identity\Municipalities;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,6 +20,7 @@ class RegisterRequest extends FormRequest
 
         $this->merge([
             'name' => trim((string) $this->input('name', '')),
+            'municipality' => trim((string) $this->input('municipality', '')),
             'email' => $email,
             'device_fingerprint' => $this->header('X-Device-Fingerprint'),
         ]);
@@ -34,6 +36,7 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'max:160', 'email:rfc', 'unique:users,email'],
             'nick' => ['required', 'string', 'min:3', 'max:20', 'unique:users,nick', 'regex:/^[a-zA-Z0-9_]+$/'],
             'department' => ['required', 'string', Rule::in(Departments::all())],
+            'municipality' => ['required', 'string', 'max:120'],
             'birth_year' => ['required', 'integer', 'min:1900', 'max:'.(now()->year - 18)],
             'password' => ['required', 'string', 'min:8', 'max:80', 'confirmed'],
             'device_fingerprint' => ['required', 'string', 'min:8', 'max:128'],
@@ -59,6 +62,22 @@ class RegisterRequest extends FormRequest
             'password.confirmed' => 'La confirmación de la contraseña no coincide.',
             'consent_terms.accepted' => 'Tienes que aceptar los términos.',
             'device_fingerprint.required' => 'Falta la identificación del dispositivo.',
+            'municipality.required' => 'Elige un municipio de la lista.',
         ];
+    }
+
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $validator): void {
+            $department = $this->input('department');
+            $municipality = $this->input('municipality');
+            if (! is_string($department) || ! is_string($municipality) || $municipality === '') {
+                return;
+            }
+
+            if (! Municipalities::belongs($department, $municipality)) {
+                $validator->errors()->add('municipality', 'Elige un municipio de ese departamento.');
+            }
+        });
     }
 }

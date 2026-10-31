@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'nick' => $this->nick,
             'avatar' => $this->avatar,
             'cover' => $this->cover,
+            'created_at' => $this->created_at,
         ];
     }
 }

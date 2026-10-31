@@ -20,7 +20,7 @@ class PublicMedia
             default => null,
         };
 
-        if ($extension === null || ! in_array($folder, ['debates', 'avatars', 'covers'], true)) {
+        if ($extension === null || ! in_array($folder, ['debates', 'avatars', 'covers', 'banners'], true)) {
             throw ValidationException::withMessages([
                 'media' => 'Ese archivo no se puede publicar.',
             ]);
@@ -47,7 +47,7 @@ class PublicMedia
 
     public function delete(?string $publicPath): void
     {
-        if (! is_string($publicPath) || ! preg_match('#^/media/(debates|avatars|covers)/[0-9a-f-]{36}\.(jpg|png|webp|gif|mp4|webm)$#', $publicPath)) {
+        if (! is_string($publicPath) || ! preg_match('#^/media/(debates|avatars|covers|banners)/[0-9a-f-]{36}\.(jpg|png|webp|gif|mp4|webm)$#', $publicPath)) {
             return;
         }
 

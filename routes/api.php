@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\DebateModerationController;
+use App\Http\Controllers\Api\Admin\HeroBannerController as AdminHeroBannerController;
 use App\Http\Controllers\Api\Admin\DeviceRecoveryController;
 use App\Http\Controllers\Api\Admin\KpiController;
 use App\Http\Controllers\Api\Admin\LeaderController;
+use App\Http\Controllers\Api\Admin\NewsModerationController;
 use App\Http\Controllers\Api\Admin\ReportQueueController;
 use App\Http\Controllers\Api\Admin\SanctionController;
 use App\Http\Controllers\Api\Admin\StaffAuthController;
@@ -14,10 +16,12 @@ use App\Http\Controllers\Api\V1\ActivityNoticeController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DebateController;
+use App\Http\Controllers\Api\V1\HeroBannerController;
 use App\Http\Controllers\Api\V1\MetricsController;
 use App\Http\Controllers\Api\V1\NewsController;
 use App\Http\Controllers\Api\V1\OpenApiController;
 use App\Http\Controllers\Api\V1\ParticipationController;
+use App\Http\Controllers\Api\V1\PeopleController;
 use App\Http\Controllers\Api\V1\PollController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SearchController;
@@ -49,6 +53,7 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/news/{newsItem}', [NewsController::class, 'show'])->middleware('throttle:60,1,news-item');
     Route::get('/polls', [PollController::class, 'index'])->middleware('throttle:60,1,polls');
     Route::get('/metrics', [MetricsController::class, 'show'])->middleware('throttle:60,1,metrics');
+    Route::get('/heroes', [HeroBannerController::class, 'index'])->middleware('throttle:60,1,heroes');
     Route::get('/search', [SearchController::class, 'index'])->middleware('throttle:60,1,search');
 
     Route::middleware(['auth:sanctum', 'device', 'throttle:120,1,conversaciones'])->group(function (): void {
@@ -72,6 +77,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/reports', [ReportController::class, 'store']);
             Route::post('/polls/{poll}/votes', [PollController::class, 'vote']);
         });
+        Route::get('/people', [PeopleController::class, 'index']);
         Route::get('/me/standing', [AccountController::class, 'standing']);
         Route::post('/me/avatar', [AccountController::class, 'avatar']);
         Route::post('/me/cover', [AccountController::class, 'cover']);
@@ -100,6 +106,10 @@ Route::prefix('admin')->middleware('admin.header')->group(function (): void {
         Route::get('/debates', [DebateModerationController::class, 'index']);
         Route::post('/debates', [DebateModerationController::class, 'store']);
         Route::post('/debates/{topic}/state', [DebateModerationController::class, 'update']);
+        Route::get('/news', [NewsModerationController::class, 'index']);
+        Route::post('/news', [NewsModerationController::class, 'store']);
+        Route::get('/heroes', [AdminHeroBannerController::class, 'index']);
+        Route::post('/heroes', [AdminHeroBannerController::class, 'store']);
         Route::get('/reports', [ReportQueueController::class, 'index']);
         Route::get('/reports/newer', [ReportQueueController::class, 'newer']);
         Route::post('/reports/{report}/decision', [ReportQueueController::class, 'decide']);

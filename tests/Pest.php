@@ -43,6 +43,7 @@ function account(array $overrides = []): array
         'email' => $nick.'@example.com',
         'nick' => $nick,
         'department' => 'La Paz',
+        'municipality' => 'El Alto',
         'birth_year' => 1990,
         'password' => 'clave-segura',
         'password_confirmation' => 'clave-segura',

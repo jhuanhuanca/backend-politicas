@@ -29,17 +29,30 @@ class AdminReportResource extends JsonResource
             'target_id' => $this->reportable_id,
             'excerpt' => $this->excerpt(),
             'reporter_nick' => $this->user?->nick,
+            'reporter_name' => $this->user?->name,
+            'reporter_department' => $this->user?->department,
+            'reporter_municipality' => $this->user?->municipality,
             'author_nick' => $this->authorNick(),
+            'author_name' => $this->authorField('name'),
+            'author_department' => $this->authorField('department'),
+            'author_municipality' => $this->authorField('municipality'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 
     private function authorNick(): ?string
     {
+        return $this->authorField('nick');
+    }
+
+    private function authorField(string $field): ?string
+    {
         $target = $this->reportable;
 
         if ($target instanceof Topic || $target instanceof Argument) {
-            return $target->user?->nick;
+            $value = $target->user?->{$field};
+
+            return is_string($value) && $value !== '' ? $value : null;
         }
 
         return null;

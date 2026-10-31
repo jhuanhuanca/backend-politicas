@@ -20,6 +20,9 @@ class AdminUserResource extends JsonResource
 
         return [
             'nick' => $this->nick,
+            'name' => $this->name,
+            'department' => $this->department,
+            'municipality' => $this->municipality,
             'created_at' => $this->created_at?->toIso8601String(),
             'metrics_consent' => $consent?->granted_at !== null,
             'device_registered' => $this->device_fingerprint !== null,

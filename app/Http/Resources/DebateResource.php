@@ -22,6 +22,7 @@ class DebateResource extends JsonResource
             'image' => $this->image,
             'kind' => $this->kind,
             'context' => $this->context,
+            'category' => $this->category,
             'likes' => $this->likes_count,
             'shares' => $this->shares_count,
             'liked' => $this->relationLoaded('reactions') && $this->reactions->isNotEmpty(),

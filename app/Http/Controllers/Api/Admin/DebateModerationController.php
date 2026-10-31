@@ -32,6 +32,7 @@ class DebateModerationController extends Controller
             $staff,
             $request->string('body')->toString(),
             $request->string('context')->toString(),
+            $request->string('category')->toString(),
             $request->filled('image') ? $request->string('image')->toString() : null,
             $request->string('kind')->toString(),
         );

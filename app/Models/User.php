@@ -24,6 +24,7 @@ class User extends Authenticatable
         'avatar',
         'cover',
         'department',
+        'municipality',
         'birth_year',
         'password',
         'device_fingerprint',

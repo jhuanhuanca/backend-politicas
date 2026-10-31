@@ -36,6 +36,7 @@ class RegisterUserAction
                 'email' => $request->string('email')->toString(),
                 'nick' => $request->string('nick')->toString(),
                 'department' => $request->string('department')->toString(),
+                'municipality' => $request->string('municipality')->toString(),
                 'birth_year' => $request->integer('birth_year'),
                 'password' => $request->string('password')->toString(),
                 'device_fingerprint' => $fingerprint,

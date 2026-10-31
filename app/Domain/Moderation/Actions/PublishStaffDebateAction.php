@@ -12,14 +12,15 @@ use Illuminate\Validation\ValidationException;
 
 class PublishStaffDebateAction
 {
-    public function execute(Staff $staff, string $body, string $context, ?string $image, string $kind): Topic
+    public function execute(Staff $staff, string $body, string $context, string $category, ?string $image, string $kind): Topic
     {
-        return DB::transaction(function () use ($staff, $body, $context, $image, $kind): Topic {
+        return DB::transaction(function () use ($staff, $body, $context, $category, $image, $kind): Topic {
             $author = $this->desk();
             $topic = Topic::query()->create([
                 'user_id' => $author->id,
                 'body' => $body,
                 'context' => $context,
+                'category' => $category,
                 'image' => $image,
                 'kind' => $image === null ? 'text' : $kind,
                 'likes_count' => 0,

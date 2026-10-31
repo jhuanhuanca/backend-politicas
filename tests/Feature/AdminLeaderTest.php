@@ -12,7 +12,13 @@ it('lists consented leader candidates and hides a profile without consent', func
         'password' => 'clave-segura',
     ]);
 
-    $voice = User::factory()->create(['nick' => 'voz_lider']);
+    $voice = User::factory()->create([
+        'nick' => 'voz_lider',
+        'name' => 'Voz Líder',
+        'email' => 'voz_lider@example.com',
+        'department' => 'Cochabamba',
+        'municipality' => 'Cochabamba',
+    ]);
     $voice->consents()->create([
         'type' => 'metrics',
         'granted_at' => now(),
@@ -56,6 +62,9 @@ it('lists consented leader candidates and hides a profile without consent', func
         ->assertOk()
         ->assertJsonCount(2, 'data')
         ->assertJsonPath('data.0.nick', 'voz_lider')
+        ->assertJsonPath('data.0.name', 'Voz Líder')
+        ->assertJsonPath('data.0.department', 'Cochabamba')
+        ->assertJsonPath('data.0.municipality', 'Cochabamba')
         ->assertJsonPath('data.0.id', $pending->id)
         ->assertJsonPath('data.0.status', 'pending')
         ->assertJsonPath('data.0.participation', 9)
@@ -67,7 +76,8 @@ it('lists consented leader candidates and hides a profile without consent', func
     expect($response->getContent())
         ->not->toContain('sin_consentimiento')
         ->not->toContain($fingerprint)
-        ->not->toContain('device_fingerprint');
+        ->not->toContain('device_fingerprint')
+        ->not->toContain('voz_lider@example.com');
 });
 
 it('recognizes a candidate and keeps that decision after a new calculation', function () {

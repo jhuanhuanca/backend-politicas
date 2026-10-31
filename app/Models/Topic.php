@@ -16,6 +16,7 @@ class Topic extends Model
         'user_id',
         'body',
         'context',
+        'category',
         'image',
         'kind',
         'likes_count',

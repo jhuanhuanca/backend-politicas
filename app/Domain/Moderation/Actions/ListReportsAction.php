@@ -17,11 +17,11 @@ class ListReportsAction
     {
         return Report::query()
             ->with([
-                'user:id,nick',
+                'user:id,nick,name,department,municipality',
                 'reportable' => function (MorphTo $morphTo): void {
                     $morphTo->morphWith([
-                        Topic::class => ['user:id,nick'],
-                        Argument::class => ['user:id,nick'],
+                        Topic::class => ['user:id,nick,name,department,municipality'],
+                        Argument::class => ['user:id,nick,name,department,municipality'],
                     ]);
                 },
             ])
